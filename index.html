@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--
+        To change the actions or people in the wheel, edit the below json.
+
+        Any '____' will be automatically replaced with a random name,
+        and if there are multiple '____' in one action they will all be different names.
+        Make sure the JSON is valid (not missing commas, etc.) or it will not load.
+    -->
+  <script type="application/json" id="wheel-config">
+    {
+        "actions": [
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with ____",
+            "____, swap with your choice",
+            "____, choose 2 others to swap",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, choose a gift to be opened",
+            "____, do a salt shot -> get a VETO",
+            "____, go howl at the moon outside -> swap with your choice",
+            "____, do a funny little dance -> swap with your choice",
+            "Everyone swaps with their partner",
+            "Rotate right!",
+            "Rotate left!",
+            "____'s gift is LOCKED for 8 spins",
+            "____ swaps with someone who agrees - you have 1 minute",
+            "Everyone pet Indie and Messi!",
+            "Everyone tell Grah how amazing her cooking is",
+            "____, swap with Paddy's choice",
+            "Last person to salute for Tyler swaps with the group's choice",
+            "____, swap with the person with the best outfit (must justify)",
+            "____, text Carson good luck with Paracosm -> swap with your choice",
+            "____, text Aspen you're thinking about moving to Chicago -> swap with your choice"
+        ],
+        "people": [
+            "Quintin",
+            "Erin",
+            "Paddy",
+            "Grah",
+            "Brooke",
+            "Diego",
+            "Boyd",
+            "Gwen",
+            "Kylie",
+            "Jack"
+        ]
+    }
+  </script>
+
+
+  <meta charset="UTF-8" />
+  <!-- Change the title here -->
+  <title>Saint Nick's Christmas Wheel</title>
+  <style>
+    :root {
+      --red-main: #8b1a1a;     /* deeper, warmer red */
+      --green-main: #1f5b2e;   /* darker, pine green accent */
+      --gold: #d9a441;         /* warmer, softer gold */
+      --text-main: #2b211a;    /* slightly warm dark brown */
+      --muted-text: #6a5a4c;   /* warm muted text */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      color: var(--text-main);
+      background-color: #ffffff;
+      background-image: url("static/bg.jpg"); /* snowy background */
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    .container {
+      position: relative;
+      background: #f3d8b7; /* warm off-white instead of pure white */
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+      padding: 24px 28px 28px;
+      max-width: 960px;
+      width: min(960px, 96%);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border: 1px solid rgba(0,0,0,0.08);
+      margin: 32px auto 48px;
+    }
+
+
+    .header-row {
+      display: flex;
+      margin: auto;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2.1rem;
+      text-align: left;
+      color: var(--red-main);
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--muted-text);
+      margin-top: 4px;
+    }
+
+    .note {
+      font-size: 0.85rem;
+      color: var(--muted-text);
+      margin-top: 2px;
+    }
+
+    .content-row {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .wheel-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .wheel-area {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    canvas {
+      background: radial-gradient(circle, #fffdf7 0%, #ffe0dc 45%, #a32626 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px #fffaf3, 0 0 0 8px #4a6b3b, 0 10px 32px rgba(0,0,0,0.35);
+    }
+
+
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 22px solid transparent;
+      border-right: 22px solid transparent;
+      border-top: 36px solid var(--gold); /* above wheel, pointing down */
+      filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+      margin-bottom: -8px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .center-cap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #ffeb3b 40%, #f57f17 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6d1b00;
+      font-size: 1.8rem;
+      font-weight: bold;
+      box-shadow: 0 0 0 4px #ffffff, 0 0 18px rgba(0,0,0,0.25);
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 2;
+      transition: transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .center-cap:hover {
+      transform: translate(-50%, -50%) scale(1.06);
+      box-shadow: 0 0 0 4px #ffffff, 0 0 24px rgba(0,0,0,0.3);
+    }
+
+    .center-cap:active {
+      transform: translate(-50%, -50%) scale(0.95);
+      box-shadow: 0 0 0 4px #ffffff, 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    .remove-toggle {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted-text);
+    }
+
+    .result-card {
+      margin-top: 10px;
+      width: 100%;
+      max-width: 640px;
+      border-radius: 14px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #fffaf5, #f6ebe0);
+      border: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+
+
+    .result-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .result-text-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.95rem;
+    }
+
+    .result-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted-text);
+    }
+
+    .result {
+      font-size: 1.1rem;
+      min-height: 1.4em;
+      word-wrap: break-word;
+      color: var(--text-main);
+    }
+
+    .bottom-controls {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .mute-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: radial-gradient(circle at top, #ffffff, #f1f1f1);
+      cursor: pointer;
+      font-size: 0.85rem;
+      user-select: none;
+      white-space: nowrap;
+      color: var(--text-main);
+    }
+
+    .mute-toggle span.icon {
+      font-size: 1.1rem;
+    }
+
+    .mute-toggle.muted {
+      opacity: 0.8;
+      border-color: rgba(0,0,0,0.1);
+      background: #f5f5f5;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 26px 26px 20px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,0,0,0.06);
+      text-align: center;
+      color: var(--text-main);
+    }
+
+    .modal h3 { font-size: 1.6rem; margin: 0 0 8px; }
+    .modal p  { font-size: 1.2rem; margin: 12px 0; }
+
+    .modal-buttons button {
+      padding: 10px 26px;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, var(--red-main), var(--green-main));
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.2);
+    }
+
+    .modal-buttons button:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        padding: 18px 14px 22px;
+        margin: 18px auto 32px;
+      }
+      .header-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      h1 {
+        text-align: left;
+        font-size: 1.8rem;
+      }
+      canvas {
+        width: 360px;
+        height: 360px;
+      }
+      .result-card {
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <h1>🎅 Saint Nick's Christmas Wheel 🎄</h1>
+      </div>
+    </div>
+
+    <div class="content-row">
+      <div class="wheel-wrapper">
+        <div class="pointer"></div>
+        <div class="wheel-area">
+          <canvas id="wheel" width="520" height="520"></canvas>
+          <div class="center-cap" id="center-cap">🎁</div>
+        </div>
+
+        <div class="result-card">
+          <div class="result-icon">✨</div>
+          <div class="result-text-wrap">
+            <div class="result-label">Last result</div>
+            <div class="result" id="result">Spin the wheel to get started!</div>
+          </div>
+        </div>
+
+        <label class="remove-toggle">
+          <input type="checkbox" id="remove-after" checked>
+          Remove the winning action after each spin
+        </label>
+
+        <div class="bottom-controls">
+          <div class="mute-toggle" id="mute-toggle">
+            <span class="icon" id="mute-icon">🔊</span>
+            <span id="mute-label">Sound on</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">Result</h3>
+      <p id="modal-message"></p>
+      <div class="modal-buttons">
+        <button id="modal-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sounds -->
+  <audio id="tick-snd" src="static/tick.mp3" preload="auto"></audio>
+  <audio id="reveal-snd" src="static/reveal.mp3" preload="auto"></audio>
+
+  <script>
+    const cfg = JSON.parse(
+        document.getElementById("wheel-config").textContent
+    );
+
+    const actions = cfg.actions || [];
+    const people  = cfg.people  || [];
+
+    let entries = shuffle(actions);
+
+
+    const canvas    = document.getElementById("wheel");
+    const ctx       = canvas.getContext("2d");
+    const centerCap = document.getElementById("center-cap");
+    const resultEl  = document.getElementById("result");
+    const removeAfterCheckbox = document.getElementById("remove-after");
+
+    const muteToggle = document.getElementById("mute-toggle");
+    const muteIcon   = document.getElementById("mute-icon");
+    const muteLabel  = document.getElementById("mute-label");
+
+    let muted   = false;
+    let spinning = false;
+
+    // Simple shuffle so actions are randomized around the wheel
+    function shuffle(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Mute toggle
+    muteToggle.addEventListener("click", () => {
+      muted = !muted;
+      if (muted) {
+        muteToggle.classList.add("muted");
+        muteIcon.textContent = "🔇";
+        muteLabel.textContent = "Sound off";
+      } else {
+        muteToggle.classList.remove("muted");
+        muteIcon.textContent = "🔊";
+        muteLabel.textContent = "Sound on";
+      }
+    });
+
+    // Modal
+    const modal        = document.getElementById("modal");
+    const modalMessage = document.getElementById("modal-message");
+    document.getElementById("modal-ok").addEventListener("click", () => {
+      modal.classList.remove("open");
+    });
+
+    function showModal(text) {
+      modalMessage.textContent = text;
+      modal.classList.add("open");
+
+      const revealSnd = document.getElementById("reveal-snd");
+      if (!muted && revealSnd) {
+        revealSnd.currentTime = 0;
+        revealSnd.play().catch(() => {});
+      }
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    // Radial text: single line, truncated to fit available radius
+    function getFittedRadialText(text, maxRadialWidth) {
+      ctx.font = "bold 14px system-ui";
+      if (ctx.measureText(text).width <= maxRadialWidth) {
+        return text;
+      }
+      let display = text;
+      while (display.length > 0 && ctx.measureText(display + "…").width > maxRadialWidth) {
+        display = display.slice(0, -1);
+      }
+      return display.length ? display + "…" : text.slice(0, 3) + "…";
+    }
+
+    function drawWheel(rotation = 0) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) / 2 - 10;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const n = entries.length;
+      if (n === 0) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.5, "#c62828");
+        gradient.addColorStop(1, "#8d0000");
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "bold 18px system-ui";
+        ctx.fillText("No entries", 0, -10);
+        ctx.font = "14px system-ui";
+        ctx.fillText("Check config file", 0, 14);
+        ctx.restore();
+        return;
+      }
+
+      const anglePer = (Math.PI * 2) / n;
+      const capRadius = 78 / 2;
+      const innerSafe = capRadius + 18;
+      const outerSafe = radius - 18;
+      const radialAvailable = Math.max(outerSafe - innerSafe, 0);
+
+      for (let i = 0; i < n; i++) {
+        const centerAngle = -Math.PI / 2 + i * anglePer + rotation;
+        const startAngle  = centerAngle - anglePer / 2;
+        const endAngle    = centerAngle + anglePer / 2;
+
+        // Slice
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        // Alternate red / green
+        ctx.fillStyle = (i % 2 === 0) ? "#b33535" : "#265c34";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+
+        // Text: radial, inside -> outside
+        const text = entries[i];
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(centerAngle);
+
+        ctx.font = "bold 14px system-ui";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const maxRadialWidth = radialAvailable;
+        const fitted = getFittedRadialText(text, maxRadialWidth);
+
+        const textRadius = innerSafe + radialAvailable / 2;
+        ctx.fillText(fitted, textRadius, 0);
+
+        ctx.restore();
+      }
+    }
+
+    function pickRandomPerson() {
+      if (!people || people.length === 0) return "Someone";
+      const idx = Math.floor(Math.random() * people.length);
+      return people[idx];
+    }
+
+    // Replace multiple ____ with distinct people (per spin)
+    function applyPersonPlaceholder(template) {
+      if (!template.includes("____")) return template;
+
+      if (!people || people.length === 0) {
+        return template.replace(/____/g, "Someone");
+      }
+
+      const used = [];
+
+      return template.replace(/____/g, () => {
+        let pool = people.filter(p => !used.includes(p));
+        if (pool.length === 0) {
+          pool = people.slice();
+          used.length = 0;
+        }
+        const choice = pool[Math.floor(Math.random() * pool.length)];
+        used.push(choice);
+        return choice;
+      });
+    }
+
+    function spinWheel() {
+      if (spinning || entries.length === 0) return;
+      spinning = true;
+      centerCap.style.pointerEvents = "none";
+
+      const n = entries.length;
+      const anglePer = (Math.PI * 2) / n;
+      const chosenIndex = Math.floor(Math.random() * n);
+
+      const fullSpins = 4;
+      const finalRotation = -((Math.PI * 2 * fullSpins) + chosenIndex * anglePer);
+      const duration = 4000;
+      const startTime = performance.now();
+
+      const tickSound = document.getElementById("tick-snd");
+      let lastTickTime = 0;
+      const tickInterval = 80; // ms
+
+      function frame(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = easeOutCubic(t);
+        const rotation = finalRotation * eased;
+
+        drawWheel(rotation);
+
+        if (t < 1) {
+          if (!muted && tickSound && now - lastTickTime > tickInterval) {
+            lastTickTime = now;
+            tickSound.currentTime = 0;
+            tickSound.play().catch(() => {});
+          }
+          requestAnimationFrame(frame);
+        } else {
+          spinning = false;
+          centerCap.style.pointerEvents = "auto";
+
+          const winningTemplate = entries[chosenIndex];
+          const finalText = applyPersonPlaceholder(winningTemplate);
+
+          resultEl.textContent = finalText;
+          showModal(finalText);
+
+          if (removeAfterCheckbox.checked) {
+            entries.splice(chosenIndex, 1);
+          }
+          drawWheel(0);
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    centerCap.addEventListener("click", spinWheel);
+
+    // Initial render
+    drawWheel(0);
+  </script>
+</body>
+</html>
